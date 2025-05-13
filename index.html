@@ -1,0 +1,4326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>財務健康度評估</title>
+    <!-- 使用最新版本的 Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- 或者方案 2：使用 emoji 作為 favicon（推薦，比較簡單） -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            padding-top: 100px; /* 預留空間，避免內容被擋住 */
+        }
+
+        .fixed-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(135deg, #6a89cc, #4a69bd);
+            color: white;
+            padding: 60px; 
+            text-align: center;
+            font-size: 42px;
+            font-weight: bold;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: 50px;  /* 減少高度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 40px; /* 固定在標題欄下方 */
+            width: 100%;
+            z-index: 1000;
+            background-color: #4a6eb1;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 0 auto;
+            padding: 0 20px;
+            max-width: 1400px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+            margin-top: 90px;  /* 調整頂部邊距 */
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 4fr 1fr;
+            gap: 20px;
+        }
+
+        .content-area {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-item {
+            margin-bottom: 20px;
+        }
+
+        .form-item select,
+        .form-item input[type="number"],
+        .form-item input[type="file"] {
+            border: none;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .default-field {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .default-field-label {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .add-field-btn {
+            background: #4a69bd;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .add-field-btn:hover {
+            background: #3c5aa9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 105, 189, 0.3);
+        }
+
+        .add-field-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .preset-label {
+            flex: 1;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 80px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-label:hover {
+            background: #dc3545;
+            transform: translateY(-2px);
+        }
+
+        .submit-button {
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .submit-button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .submit-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .sidebar-right {
+            position: sticky;
+            top: 60px;
+            height: fit-content;
+        }
+
+        .knowledge-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .knowledge-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .knowledge-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .knowledge-card h3 {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .knowledge-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .features-container {
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .threshold-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .threshold-markers {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .threshold-marker {
+            font-size: 20px;
+            color: #4a69bd;
+        }
+
+        #threshold {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #4CAF50 50%, #ddd 50%);
+            outline: none;
+            margin: 20px 0;
+        }
+
+        #threshold::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4a69bd;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #threshold-value {
+            font-size: 20px;
+            color: #2d3748;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .welcome-section {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            max-width: 600px;
+            transition: all 0.3s ease;
+        }
+
+        .welcome-section h1 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .welcome-section p {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+
+        .cta-button {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 24px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+        }
+
+        .content-wrapper {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .content-wrapper.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .animate-bounce {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-20px);
+            }
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* 導航欄樣式 */
+        .navbar {
+            position: fixed;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 1400px;
+            background: linear-gradient(135deg, #4a69bd, #6a89cc);
+            padding: 15px 0;
+            z-index: 9;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-size: 20px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 預設按鈕樣式 */
+        .preset-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #10B981;
+            color: #10B981;
+            background: white;
+            border-radius: 0.5rem;
+            min-width: 80px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .preset-btn:hover {
+            background: #10B981;
+            color: white;
+        }
+
+        /* 刪除按鈕樣式 */
+        .delete-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #10B981;
+            color: #10B981;
+            background: white;
+            border-radius: 0.5rem;
+            min-width: 80px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .delete-btn:hover {
+            border-color: #EF4444;
+            color: white;
+            background: #EF4444;
+        }
+
+        /* 結果顯示樣式 */
+        .result-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .result-section:hover {
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .result-content {
+            color: #2d3748;
+            line-height: 1.8;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        
+        /* 新增樣式，用於財務分析結果區塊 */
+        #analysis-results {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        #analysis-results .result-section {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: none;
+            position: relative;
+        }
+        
+        #analysis-results .result-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+        }
+        
+        #analysis-results .analysis-title {
+            color: #4a69bd;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: block;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        /* 處理模型資訊特殊樣式 */
+        #section0 {
+            background: #f8fafc;
+        }
+        
+        #section0 .analysis-title {
+            font-size: 20px;
+        }
+        
+        /* 為所有內容中的標題添加藍色粗體樣式 */
+        #analysis-results .result-content strong,
+        #analysis-results .result-content b,
+        #analysis-results .result-content h1,
+        #analysis-results .result-content h2,
+        #analysis-results .result-content h3,
+        #analysis-results .result-content h4,
+        #analysis-results .result-content h5,
+        #analysis-results .result-content h6 {
+            color: #4a69bd;
+            font-weight: bold;
+        }
+        
+        /* 下載按鈕樣式優化 */
+        .download-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+        }
+        
+        /* 結果圖片顯示樣式 */
+        .result-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 添加分隔線樣式 */
+        .section-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 10px 0 20px 0;
+            opacity: 0.3;
+            width: 100%;
+        }
+
+        /* 修改標題樣式 */
+        .analysis-title {
+            color: #4a69bd;
+            font-weight: bold;
+            display: inline;
+            font-size: 16px;
+        }
+
+        /* 修改表單標籤字體大小 */
+        .form-item label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* 圖表容器樣式 */
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 分頁式 UI 樣式 */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #f3f4f6;
+        }
+
+        .tab.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        /* 新增金色和綠色主題 */
+        .theme-gold {
+            color: #d4af37;
+        }
+
+        .theme-green {
+            color: #10b981;
+        }
+
+        /* FAQ 樣式 */
+        .faq-section {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #f8fafc;
+            border-radius: 1rem;
+        }
+
+        .faq-item {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            transform: translateX(10px);
+        }
+
+        /* 功能卡片容器 */
+        .features-container {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+            padding-top: 40px;
+        }
+
+        .features-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 分析區塊樣式 */
+        #analysis-section {
+            display: none;
+            padding-top: 40px;
+            font-family: "Times New Roman", Times, serif;
+        }
+
+        #analysis-section.active {
+            display: block;
+        }
+
+        /* 財務知識小教室樣式 */
+        .knowledge-section {
+            position: sticky;
+            top: 200px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e2e8f0;
+            display: none;
+        }
+
+        .knowledge-section.visible {
+            display: block;
+        }
+
+        .knowledge-title {
+            font-size: 22px;
+            color: #4a69bd;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .knowledge-card {
+            background: #f8faff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .knowledge-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 105, 189, 0.1);
+        }
+
+        .knowledge-card h3 {
+            color: #4a69bd;
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .knowledge-card p {
+            color: #4a5568;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        /* 主要容器樣式 */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 3fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 2000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .content-area {
+            grid-column: 2;
+        }
+
+        .sidebar-right {
+            grid-column: 3;
+            margin-top: 40px;
+        }
+
+        /* 知識小教室網格布局 */
+        .knowledge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            margin-top: 40px;  /* 增加頂部邊距 */
+        }
+
+        .knowledge-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .knowledge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .knowledge-card h3 {
+            font-size: 1.25rem;
+            color: #4a69bd;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .knowledge-card p {
+            color: #4a5568;
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
+        /* 歷史數據區塊樣式 */
+        #history-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 聯絡表單樣式 */
+        .contact-form {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 內容包裝器過渡效果 */
+        .content-wrapper {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .content-wrapper.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 導航鏈接激活狀態 */
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 修改財務分析區塊的字體和大小 */
+        #analysis-section {
+            font-family: "Times New Roman", Times, serif;
+        }
+
+        #analysis-section label {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        #analysis-section input,
+        #analysis-section select {
+            font-size: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        #analysis-section input:focus,
+        #analysis-section select:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+
+        .default-field {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .default-field:hover {
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+        }
+
+        .default-field-label {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 18px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+        }
+
+        /* 修改輸入組樣式 */
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-group select {
+            flex: 5;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            flex: 2;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            -moz-appearance: textfield;
+        }
+
+        .input-group input::-webkit-outer-spin-button,
+        .input-group input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-group .preset-label {
+            flex: 1;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 80px;
+            cursor: pointer;
+        }
+
+        /* 下載按鈕樣式 */
+        .download-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+        }
+
+        /* 添加樣式 */
+        .notice-section {
+            transition: all 0.3s ease;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .notice-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-section {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        .result-capture {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+        
+        .result-capture .result-content {
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        /* 新增樣式 */
+        .numbered-title {
+            color: #4a69bd;
+            font-weight: bold;
+            display: block;
+            margin: 20px 0 10px 0;
+            font-size: 20px;
+        }
+
+        .delete-all-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .delete-all-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+
+        .download-btn {
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .history-record {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .history-record:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .record-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .record-content {
+            padding: 15px 0;
+        }
+
+        .input-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .input-summary h4 {
+            color: #4a69bd;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .input-summary ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .input-summary li {
+            padding: 5px 0;
+            color: #4a5568;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+
+        .delete-all-btn {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-all-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .download-btn, .delete-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px;
+        }
+
+        .download-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .history-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .history-btn.download-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .history-btn.download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .history-btn.delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .history-btn.delete-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        /* 歷史記錄相關樣式 */
+        .history-container {
+            padding: 20px;
+        }
+
+        .history-records {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .history-record {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .history-record:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .record-content {
+            width: 100%;
+        }
+
+        .record-content img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .history-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            min-width: 120px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .history-btn.download-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .history-btn.download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .history-btn.delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .history-btn.delete-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .delete-all-btn {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-all-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        /* 聯絡表單相關樣式 */
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            border-color: #4a69bd;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 105, 189, 0.1);
+        }
+
+        .contact-form button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .contact-form button[type="submit"]:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .contact-form button[type="submit"]:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 修改財務比率查詢工具和財務知識小教室之間的間距 */
+        .knowledge-card.mb-8 {
+            margin-bottom: 80px !important;  /* 增加底部邊距 */
+        }
+
+        /* 確保標題在滾動時消失 */
+        @media screen and (max-width: 100%) {
+            .fixed-header {
+                position: absolute;
+            }
+        }
+
+        /* 添加 Threshold 提示文字样式 */
+        .threshold-description {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+
+        .threshold-icon {
+            font-size: 24px;
+            font-style: normal;
+            margin-right: 10px;
+        }
+
+        .threshold-text {
+            font-style: normal;
+            margin-bottom: 5px;
+        }
+
+        .threshold-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .threshold-info i {
+            font-size: 24px;
+        }
+
+        .threshold-info-content {
+            flex: 1;
+        }
+
+        .threshold-info-title {
+            font-weight: bold;
+            color: #4a69bd;
+            margin-bottom: 5px;
+        }
+
+        .threshold-info-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .history-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .history-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .history-card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4a69bd;
+            margin-bottom: 15px;
+        }
+
+        .history-card-content {
+            margin-bottom: 20px;
+        }
+
+        .history-card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #4a69bd;
+        }
+
+        .history-card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .history-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .history-btn.download-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .history-btn.delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .welcome-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .instruction-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        
+        .history-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        
+        .history-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .history-card-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .history-card-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #333;
+        }
+        
+        .history-card-content {
+            padding: 15px;
+        }
+        
+        .history-info {
+            margin-bottom: 15px;
+        }
+        
+        .prediction {
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .prediction.healthy {
+            color: #28a745;
+        }
+        
+        .prediction.unhealthy {
+            color: #dc3545;
+        }
+        
+        .health-score {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .history-image-container {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+        
+        .history-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .history-card-actions {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px;
+        }
+        
+        .welcome-message h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .welcome-message ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .welcome-message li {
+            margin: 10px 0;
+            color: #666;
+        }
+        
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            background: #fff3f3;
+            border-radius: 10px;
+            margin: 20px;
+            color: #dc3545;
+        }
+
+        .result-section {
+            margin: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .result-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+
+        .section h3 {
+            color: #007bff;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .section p {
+            margin: 8px 0;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .delete-all-container {
+            text-align: right;
+            margin: 20px;
+        }
+
+        .delete-all-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 1rem;
+        }
+
+        .delete-all-btn:hover {
+            background: #c82333;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .delete-btn i {
+            font-size: 0.9rem;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .history-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .history-card-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .analysis-date {
+            margin: 0;
+            color: #007bff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .history-card-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .history-info {
+            margin-bottom: 20px;
+        }
+        
+        .financial-health {
+            font-size: 1.2rem;
+            color: #333;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .prediction {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .prediction.healthy {
+            color: #28a745;
+        }
+        
+        .prediction.unhealthy {
+            color: #dc3545;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+            width: 100%;
+            margin-top: auto;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        
+        .welcome-message h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .welcome-message ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .welcome-message li {
+            margin: 15px 0;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .history-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+                /* 現有樣式 */
+                .model-selection {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+
+        .model-selection label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+
+
+        .model-selection select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            background-color: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+
+        .model-selection select:hover {
+            border-color: #999;
+        }
+
+
+        .model-selection select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="fixed-header">
+        💰 財務健康度與風險評估
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="#home" class="nav-link">首頁</a>
+            <a href="#analysis" class="nav-link">財務分析</a>
+            <a href="#knowledge" class="nav-link">財務知識小教室</a>
+            <a href="#history" class="nav-link">歷史數據</a>
+            <a href="#contact" class="nav-link">聯絡我們</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-container">
+            <!-- 左側空白區 -->
+            <div class="sidebar-left"></div>
+
+            <!-- 中間內容區 -->
+            <div class="content-area">
+                <!-- 首頁內容 -->
+                <div id="home" class="content-wrapper">
+                    <div class="welcome-section">
+                        <h1>👋 歡迎使用財務健康度評估系統</h1>
+                        <p>本系統提供專業的財務分析和風險評估服務，幫助您做出明智的決策。</p>
+                        <button onclick="navigateToAnalysis()" class="cta-button animate-bounce">
+                            開始分析 ➜
+                        </button>
+                    </div>
+                    
+                </div>
+
+                <!-- 財務分析區塊 -->
+                <div id="analysis" class="content-wrapper">
+                    <div class="form-container">
+                        <div class="form-item">
+                            <label for="inputMethod">選擇輸入方式:</label>
+                            <select id="inputMethod" onchange="toggleInputMethod()">
+                                <option value="manual">手動輸入</option>
+                                <option value="file">上傳檔案</option>
+                            </select>
+                        </div>
+
+                        <!-- 手動輸入區域 -->
+                        <div id="manual-input">
+                            <div class="form-item">
+                                <label>財務比率輸入:</label>
+                                <div id="fields-container">
+                                    <div class="input-group">
+                                        <select disabled>
+                                            <option selected>Net Income to Total Assets</option>
+                                        </select>
+                                        <input type="number" placeholder="輸入數值" min="0.0000" max="999.9999" step="0.0001">
+                                        <span class="preset-label">預設</span>
+                                    </div>
+                                    <div class="input-group">
+                                        <select disabled>
+                                            <option selected>Net Income to Stockholder's Equity</option>
+                                        </select>
+                                        <input type="number" placeholder="輸入數值" min="0.0000" max="999.9999" step="0.0001">
+                                        <span class="preset-label">預設</span>
+                                    </div>
+                                    <div class="input-group">
+                                        <select disabled>
+                                            <option selected>Equity to Liability</option>
+                                        </select>
+                                        <input type="number" placeholder="輸入數值" min="0.0000" max="999.9999" step="0.0001">
+                                        <span class="preset-label">預設</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="add-field-btn" id="add-field-btn">+ 新增欄位</button>
+                            </div>
+                        </div>
+
+                        <!-- 檔案上傳區域 -->
+                        <div id="file-input" style="display: none;">
+                            <div class="form-item">
+                                <label>上傳財務數據檔案:</label>
+                                <input type="file" accept=".csv, .xlsx, .json" id="file-upload">
+                            </div>
+                        </div>
+
+                        <!-- Threshold 設定 -->
+                        <div class="form-item">
+                            <label>設定 Threshold:</label>
+                            <div class="threshold-description">
+                                你想要更「保守」還是更「嚴格」？
+                            </div>
+                            <div class="threshold-container">
+                                <input type="range" id="threshold" min="0.001" max="1.000" step="0.001" value="0.500">
+                            </div>
+                            <p id="threshold-value" class="mt-2">目前值: 0.500</p>
+                            <div id="threshold-info" class="threshold-info">
+                                <i class="threshold-icon">⚖️</i>
+                                <div class="threshold-info-content">
+                                    <div class="threshold-info-title">風險評估標準</div>
+                                    <div class="threshold-info-text">平衡，標準閾值</div>
+                                    <div class="threshold-info-title">適用場景</div>
+                                    <div class="threshold-info-text">大多數應用，標準風險評估</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="analysis-section">
+                            <div class="model-selection">
+                                <label for="modelSelect">選擇模型:</label>
+                                <select id="modelSelect" class="form-control">
+                                    <option value="classification">分類模型 (XGBoost)</option>
+                                    <option value="regression">回歸模型 (Stacking)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="button" id="submit-btn" class="submit-button">
+                            開始分析
+                        </button>
+                    </div>
+
+                    <!-- 結果顯示區域 -->
+                    <div class="form-container">
+                        <h2 class="text-xl font-bold mb-4">📋 AI 財務分析報告</h2>
+                        <div id="result-text">
+                            請輸入數據並提交
+                        </div>
+                        <!-- 添加分析結果顯示區域 -->
+                        <div id="analysis-results" style="display: none;">
+                            <div id="section0" class="result-section"></div>
+                            <div id="section1" class="result-section"></div>
+                            <div id="section2" class="result-section"></div>
+                            <div id="section3" class="result-section"></div>
+                            <div id="section4" class="result-section"></div>
+                            <div id="section5" class="result-section"></div>
+                        </div>
+                        <div class="download-section">
+                            <button onclick="downloadAndSaveReport()" class="download-btn">
+                                💾 下載分析報告
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 財務知識小教室區塊 -->
+                <div id="knowledge" class="content-wrapper" style="display: none;">
+                    <div class="welcome-section">
+                        <h1>📚 財務知識小教室</h1>
+                        <p>讓我們一起學習重要的財務知識，提升您的財務決策能力。</p>
+                    </div>
+
+                    <div class="knowledge-grid">
+                        <div class="knowledge-card" style="min-height: 300px;">
+                            <h2 class="text-2xl font-bold mb-4">財務報表基礎知識</h2>
+                            <p style="margin-bottom: 20px;">財務報表是企業經營成果的展現，透過分析財務報表，我們可以了解企業的營運效率、獲利能力與風險。</p>
+                            <ul class="mt-4 list-disc list-inside" style="line-height: 2;">
+                                <li>資產負債表：反映企業在特定時點的財務狀況，包含資產、負債和股東權益三大項目</li>
+                                <li>損益表：顯示一段時間內的經營成果，包括收入、成本、費用和利潤等項目</li>
+                                <li>現金流量表：記錄現金的收入和支出情況，分為營業、投資和籌資三大活動</li>
+                                <li>股東權益變動表：追蹤股本、盈餘分配等變動，呈現企業資本結構演變</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 財報比率說明選擇區塊 -->
+                    <div class="knowledge-card mb-8" style="margin-bottom: 60px !important;">
+                        <h2 class="text-2xl font-bold mb-4">財務比率查詢工具</h2>
+                        <p style="margin-bottom: 20px;">藉由上述財報中的數據進行數學運算，評估企業財務結構、經營效率和償債能力等指標。</p>
+                        <div class="form-group">
+                            <select class="form-select w-full p-2 border rounded" id="financialMetric">
+                                <option value="">請選擇財務指標...</option>
+                            </select>
+                        </div>
+                        <div class="result-section mt-4" id="resultSection" style="display: none;">
+                            <h3 class="text-xl font-bold text-blue-600">指標詳細資訊</h3>
+                            <div class="mt-4">
+                                <p class="font-bold">指標分類：</p>
+                                <p id="metricCategory" class="mb-2"></p>
+                                <p class="font-bold">指標描述：</p>
+                                <p id="metricDescription" class="mb-2"></p>
+                                <p class="font-bold">計算公式：</p>
+                                <div id="metricFormula" class="p-2 bg-gray-100 rounded mb-2"></div>
+                                <p class="font-bold">合理範圍：</p>
+                                <div id="metricRange" class="p-2 bg-blue-50 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 歷史數據區塊 -->
+                <div id="history" class="content-wrapper" style="display: none;">
+                    <div class="welcome-section">
+                        <h1>📊 歷史分析記錄</h1>
+                        <div id="history-welcome" style="display: none; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                            <p style="font-size: 1.2em; font-weight: bold;">歡迎使用財務分析系統</p>
+                            <p>您還沒有任何分析記錄。您可以：</p>
+                            <ul style="list-style-type: none; padding: 0;">
+                                <li>✅ 上傳財務數據檔案進行分析</li>
+                                <li>✅ 手動輸入財務指標進行分析</li>
+                                <li>✅ 查看分析報告和建議</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div id="history-content" style="display: none;">
+                        <!-- 歷史記錄內容將在這裡動態顯示 -->
+                    </div>
+                </div>
+                
+
+                <!-- 聯絡我們區塊 -->
+                <div id="contact" class="content-wrapper" style="display: none;">
+                    <div class="welcome-section">
+                        <h1>📧 聯絡我們</h1>
+                        <p>如有任何問題或建議，歡迎與我們聯繫。</p>
+                    </div>
+                    <div class="form-container">
+                        <form id="contactForm" onsubmit="handleSubmit(event)">
+                            <div class="input-group">
+                                <span class="preset-label">姓名</span>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+
+                            <div class="input-group">
+                                <span class="preset-label">信箱</span>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+
+                            <div class="input-group">
+                                <span class="preset-label">主旨</span>
+                                <input type="text" id="subject" name="subject" required>
+                            </div>
+
+                            <div class="input-group">
+                                <span class="preset-label">內容</span>
+                                <textarea id="message" name="message" rows="5" required style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #e2e8f0;"></textarea>
+                            </div>
+
+                            <button type="submit" class="submit-button" style="margin-top: 20px;">送出訊息</button>
+                        </form>
+                    </div>
+
+                    <div class="contact-info" style="margin-top: 30px;">
+                        <h2 class="text-xl font-bold">其他聯絡方式</h2>
+                        <p>📞 電話：(02) 1234-5678</p>
+                        <p>📧 Email：contact@example.com</p>
+                        <p>🏢 地址：Tibame 台北校區</p>
+                        <p>⏰ 服務時間：週一至週五 9:00-16:30</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側空白區 -->
+            <div class="sidebar-right"></div>
+        </div>
+    </div>
+
+    <script>
+        // 頁面加載時顯示首頁
+        window.addEventListener('load', function() {
+            // 顯示首頁內容
+            const homeSection = document.getElementById('home');
+            homeSection.style.display = 'block';
+            homeSection.classList.add('active');
+
+            // 激活首頁導航連結
+            document.querySelector('a[href="#home"]').classList.add('active');
+
+            // 顯示特色區塊
+            const featuresContainer = document.querySelector('.features-container');
+            featuresContainer.classList.add('visible');
+
+            // 初始化 AOS
+            AOS.init({
+                duration: 800,
+                once: true
+            });
+        });
+
+        // 更新 Threshold 顯示和背景
+        function updateThreshold(value) {
+            const threshold = document.getElementById('threshold');
+            const percentage = ((value - 0.001) / (1.000 - 0.001)) * 100;
+            threshold.style.background = `linear-gradient(to right, #4CAF50 ${percentage}%, #ddd ${percentage}%)`;
+            
+            // 更新顯示值
+            document.getElementById('threshold-value').textContent = `目前值: ${value}`;
+            
+            // 更新提示信息
+            const thresholdInfo = document.getElementById('threshold-info');
+            let icon, title, text, title2, text2;
+            
+            if (value <= 0.4) {
+                icon = '⚠️';
+                title = '風險評估標準';
+                text = '保守，容易標為高風險';
+                title2 = '適用場景';
+                text2 = '風險偏好較低，希望預警更靈敏';
+            } else if (value <= 0.7) {
+                icon = '⚖️';
+                title = '風險評估標準';
+                text = '平衡，標準閾值';
+                title2 = '適用場景';
+                text2 = '大多數應用，標準風險評估';
+            } else {
+                icon = '🎯';
+                title = '風險評估標準';
+                text = '嚴格，減少誤報高風險';
+                title2 = '適用場景';
+                text2 = '風險容忍度較高，避免誤判';
+            }
+            
+            thresholdInfo.innerHTML = `
+                <i class="threshold-icon">${icon}</i>
+                <div class="threshold-info-content">
+                    <div class="threshold-info-title">${title}</div>
+                    <div class="threshold-info-text">${text}</div>
+                    <div class="threshold-info-title">${title2}</div>
+                    <div class="threshold-info-text">${text2}</div>
+                </div>
+            `;
+        }
+
+        // 監聽 Threshold 變化
+        document.getElementById('threshold').addEventListener('input', function() {
+            updateThreshold(this.value);
+        });
+
+        // 初始化 Threshold
+        updateThreshold(0.500);
+
+        // 修改導航處理函數
+        function handleNavigation(targetId) {
+            // 移除所有導航連結的活動狀態
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 為當前選中的導航添加活動狀態
+            document.querySelector(`a[href="#${targetId}"]`).classList.add('active');
+            
+            // 隱藏所有內容區域
+            document.querySelectorAll('.content-wrapper').forEach(section => {
+                section.style.display = 'none';
+                section.classList.remove('active');
+            });
+
+            // 顯示目標內容區域
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                setTimeout(() => {
+                    targetSection.classList.add('active');
+                    // 如果是歷史數據頁面，則載入歷史記錄
+                    if (targetId === 'history') {
+                        loadHistory();
+                    }
+                }, 10);
+            }
+        }
+
+        // 開始分析按鈕點擊事件
+        function navigateToAnalysis() {
+            handleNavigation('analysis');
+        }
+
+        // 導航點擊事件
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                handleNavigation(targetId);
+            });
+        });
+
+        // 修改分析結果處理函數
+        function handlePredictionResult(data) {
+            try {
+                console.log("收到分析結果:", data);
+                
+                // 生成結果文本
+                const resultText = document.getElementById('result-text');
+                resultText.innerHTML = '';
+                
+                if (data.error) {
+                    resultText.innerHTML = `<div class="error-message">錯誤: ${data.error}</div>`;
+                    return;
+                }
+                
+                // 創建結果容器
+                const resultContainer = document.createElement('div');
+                resultContainer.className = 'result-container';
+                
+                // 添加預測結果
+                const predictionClass = data.prediction >0.5 ? 'healthy' : 'unhealthy';
+                const predictionResult = data.prediction >0.5  ? '財務健康' : '可能破產';
+                
+                resultText.appendChild(resultContainer);
+                
+                // 顯示section內容
+                if (data.sections) {
+                    console.log("處理sections數據:", Object.keys(data.sections));
+                    // 顯示分析結果區域
+                    const analysisResultsDiv = document.getElementById('analysis-results');
+                    analysisResultsDiv.style.display = 'block'; // 改為 block 以適應容器佈局
+                    analysisResultsDiv.innerHTML = ''; // 清空現有內容
+                    
+                    // 依次處理每個section
+                    for (let i = 0; i <= 5; i++) {
+                        const sectionData = data.sections[`section_${i}`];
+                        if (!sectionData) {
+                            console.warn(`缺少section_${i}數據`);
+                            continue;
+                        }
+                        
+                        console.log(`處理section_${i}:`, sectionData);
+                        
+                        // 創建section元素
+                        const sectionDiv = document.createElement('div');
+                        sectionDiv.id = `section${i}`;
+                        sectionDiv.className = 'result-section';
+                        
+                        // 創建標題
+                        const titleH2 = document.createElement('h2');
+                        titleH2.className = 'analysis-title';
+                        
+                        // 美化標題
+                        let titleText = sectionData.title || `分析結果 ${i+1}`;
+                        // 移除SECTION前綴
+                        titleText = titleText.replace(/^SECTION\s*\d+\s*/i, '');
+                        
+                        if (i === 0) {
+                            titleText = '模型資訊';
+                        } else if (titleText.trim() === '') {
+                            // 為空標題添加默認值
+                            const defaultTitles = [
+                                '模型資訊',
+                                '整體統計的數據與指標分析',
+                                '對這些指標的詳細解釋',
+                                '針對可能破產企業的具體改善建議',
+                                '建議的後續分析方向',
+                                '注意事項'
+                            ];
+                            titleText = defaultTitles[i] || `分析結果 ${i+1}`;
+                        }
+                        
+                        titleH2.textContent = titleText;
+                        
+                        // 創建內容容器
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'result-content';
+                        
+                        // 處理不同類型的內容
+                        let contentHtml = '';
+                        const content = sectionData.content;
+                        
+                        if (i === 0 && typeof content === 'object') {
+                            // Section 0 特殊處理
+                            contentHtml = `
+                                <p><strong>預測結果:</strong> ${content.prediction || '無數據'}</p>
+                                <p><strong>財務健康度:</strong> ${content.financial_health || '無數據'}</p>
+                                <p><strong>準確率:</strong> ${content.accuracy || '無數據'}</p>
+                                <p><strong>精確率:</strong> ${content.precision || '無數據'}</p>
+                                <p><strong>召回率:</strong> ${content.recall || '無數據'}</p>
+                                <p><strong>F1分數:</strong> ${content.f1_score || '無數據'}</p>
+                                ${content.analysis ? `<div class="analysis-content">${formatContent(content.analysis)}</div>` : ''}
+                            `;
+                        
+                        } else {
+                            // 其他section處理內容格式
+                            contentHtml = formatContent(content) || '無數據';
+                        }
+                        
+                        contentDiv.innerHTML = contentHtml;
+                        
+                        // 組裝section
+                        sectionDiv.appendChild(titleH2);
+                        sectionDiv.appendChild(contentDiv);
+                        
+                        // 添加到結果區域
+                        analysisResultsDiv.appendChild(sectionDiv);
+                    }
+                    
+                    // 確保只在財務分析頁面顯示結果
+                    const analysisSection = document.getElementById('analysis');
+                    analysisSection.style.display = 'block';
+                    
+                    // 滾動到結果區域
+                    resultText.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    console.warn("回應中缺少sections數據");
+                    document.getElementById('analysis-results').style.display = 'none';
+                }
+            } catch (error) {
+                console.error("處理分析結果時出錯:", error);
+                const resultText = document.getElementById('result-text');
+                resultText.innerHTML = `<div class="error-message">處理結果時發生錯誤: ${error.message}</div>`;
+            }
+        }
+        
+        // 格式化內容，優化段落和標題
+        function formatContent(content) {
+            if (!content) return '';
+            
+            let formattedContent = content;
+            
+            // 將常見的標題模式替換為帶樣式的標題
+            formattedContent = formattedContent.replace(/^\s*([一二三四五六七八九十1-9][\.、．：:][^<>\n]{3,})/gm, '<strong>$1</strong>');
+            formattedContent = formattedContent.replace(/^\s*([A-Z][\.、．：:])/gm, '<strong>$1</strong>');
+            
+            // 將冒號後面的重要信息設為藍色
+            formattedContent = formattedContent.replace(/(：|:)([^<>\n]{1,30})(。|\.|，|,|\n)/g, '$1<span style="color:#4a69bd;">$2</span>$3');
+            
+            // 將數字百分比加粗
+            formattedContent = formattedContent.replace(/(\d+(\.\d+)?%)/g, '<strong>$1</strong>');
+            
+            // 替換換行符為段落
+            formattedContent = formattedContent.replace(/\n\s*\n/g, '</p><p>');
+            formattedContent = formattedContent.replace(/\n/g, '<br>');
+            
+            // 確保整個內容被段落包裹
+            if (!formattedContent.startsWith('<p>')) {
+                formattedContent = '<p>' + formattedContent;
+            }
+            if (!formattedContent.endsWith('</p>')) {
+                formattedContent = formattedContent + '</p>';
+            }
+            
+            return formattedContent;
+        }
+
+        // 移除自動下載的部分
+        function showResults(data) {
+            const resultText = document.getElementById('result-text');
+            // ... 顯示結果的代碼 ...
+            
+            // 添加下載按鈕
+            const downloadButton = document.createElement('button');
+            downloadButton.className = 'download-btn';
+            downloadButton.textContent = '下載報告';
+            downloadButton.onclick = downloadAndSaveReport;
+            resultText.appendChild(downloadButton);
+        }
+
+        async function downloadAndSaveReport() {
+            try {
+                // 獲取要截圖的元素 - 包括結果文本和分析結果
+                const resultContainer = document.createElement('div');
+                resultContainer.style.background = '#ffffff';
+                resultContainer.style.padding = '20px';
+                resultContainer.style.borderRadius = '10px';
+                
+                // 複製結果文本
+                const resultText = document.getElementById('result-text').cloneNode(true);
+                resultContainer.appendChild(resultText);
+                
+                // 複製分析結果區域
+                if (document.getElementById('analysis-results').style.display !== 'none') {
+                    const analysisResults = document.getElementById('analysis-results').cloneNode(true);
+                    analysisResults.style.display = 'block';
+                    resultContainer.appendChild(analysisResults);
+                }
+                
+                // 暫時添加到文檔以便截圖
+                resultContainer.style.position = 'absolute';
+                resultContainer.style.left = '-9999px';
+                document.body.appendChild(resultContainer);
+                
+                // 獲取分析結果
+                let prediction = 0;
+                let financialHealth = 0.5;
+                
+                // 嘗試從結果中獲取值
+                try {
+                    const resultContent = document.querySelector('.result-content');
+                    console.dir(resultContent);
+
+                    if (resultContent) {
+                        prediction = resultContent.textContent.includes('財務健康') ? 0 : 1;
+                        
+                        // 直接從模型資訊中獲取財務健康度
+                        const modelInfo = document.querySelector('#section0 .result-content');
+                        console.dir(modelInfo);
+                        const match = modelInfo ? modelInfo.textContent.match(/財務健康度[:：]?\s*([\d.]+)%/) : null;
+                        console.log(match.textContent);
+                        financialHealth = match && !isNaN(match[1]) ? parseFloat(match[1]) / 100 : null;
+                        if (financialHealth === null) {
+                            const apiResponse = await fetch('/financial_health');
+                            const apiData = await apiResponse.json();
+                            financialHealth = apiData.financial_health || 0.5;
+                        }
+                        alert(financialHealth)
+                    }
+                } catch (e) {
+                    console.error('解析結果數據時出錯:', e);
+                }
+                
+                // 使用 html2canvas 截圖
+                const canvas = await html2canvas(resultContainer, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true
+                });
+                
+                // 移除暫時添加的元素
+                document.body.removeChild(resultContainer);
+                
+                // 先保存到伺服器
+                const response = await fetch('/save-history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        imageData: canvas.toDataURL('image/png'),
+                        prediction: prediction,
+                        financial_health: financialHealth
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // 成功保存後再下載
+                    const link = document.createElement('a');
+                    link.download = `財務分析報告_${new Date().toLocaleDateString().replace(/\//g, '-')}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    alert('分析報告已成功下載');
+                } else {
+                    throw new Error(result.message || '保存失敗');
+                }
+            } catch (error) {
+                console.error('下載報告時發生錯誤:', error);
+                alert('下載報告失敗，請稍後再試');
+            }
+        }
+
+        // 收集輸入數據的輔助函數
+        function collectInputData() {
+            const inputs = document.querySelectorAll('#fields-container .input-group');
+            return Array.from(inputs).map(group => {
+                const select = group.querySelector('select');
+                const input = group.querySelector('input');
+                return {
+                    indicator: select.value || select.options[0].text,
+                    value: input.value
+                };
+            });
+        }
+
+        // 修改顯示歷史記錄的函數
+        async function loadHistory() {
+            try {
+                const response = await fetch('/get-history');
+                const data = await response.json();
+                
+                const historyContent = document.getElementById('history-content');
+                const historyWelcome = document.getElementById('history-welcome');
+                
+                if (!data || data.is_empty || !data.history || data.history.length === 0) {
+                    historyContent.style.display = 'none';
+                    historyWelcome.style.display = 'block';
+                    historyWelcome.innerHTML = `
+                        <div class="welcome-message">
+                            <h3>歡迎使用財務分析系統</h3>
+                            <p>目前還沒有分析記錄。您可以：</p>
+                            <ul>
+                                <li>上傳檔案進行分析</li>
+                                <li>手動輸入數據進行分析</li>
+                            </ul>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                historyContent.style.display = 'block';
+                historyWelcome.style.display = 'none';
+                
+                const historyList = document.createElement('div');
+                historyList.className = 'history-grid';
+                
+                data.history.forEach(record => {
+                    const recordCard = document.createElement('div');
+                    recordCard.className = 'history-card';
+                    recordCard.dataset.filename = record.filename; // 添加 data-filename 屬性以便後續選擇
+                    recordCard.innerHTML = `
+                        <div class="history-card-header">
+                            <h3 class="analysis-date">分析報告 ${new Date(record.timestamp).toLocaleDateString()}</h3>
+                        </div>
+                        <div class="history-card-content">
+                            <div class="history-info">
+                                <p class="financial-health">財務健康度：${(record.financial_health * 100).toFixed(2)}%</p>
+                                <p class="prediction ${record.prediction >0.5 ? 'healthy' : 'unhealthy'}">
+                                    預測結果：${record.prediction >0.5 ? '財務健康' : '可能破產'}
+                                </p>
+                            </div>
+                            <button onclick="deleteRecord('${record.filename}')" class="delete-btn">
+                                <i class="fas fa-trash"></i> 刪除記錄
+                            </button>
+                        </div>
+                    `;
+                    historyList.appendChild(recordCard);
+                });
+                
+                historyContent.innerHTML = '';
+                historyContent.appendChild(historyList);
+                
+            } catch (error) {
+                console.error('載入歷史記錄時發生錯誤:', error);
+                const historyContent = document.getElementById('history-content');
+                const historyWelcome = document.getElementById('history-welcome');
+                historyContent.style.display = 'none';
+                historyWelcome.style.display = 'block';
+                historyWelcome.innerHTML = `
+                    <div class="error-message">
+                        <h3>載入歷史記錄時發生錯誤</h3>
+                        <p>請稍後再試。如果問題持續存在，請聯繫系統管理員。</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 確保在切換到歷史頁面時載入數據
+        document.addEventListener('DOMContentLoaded', function() {
+            const historyLink = document.querySelector('a[href="#history"]');
+            if (historyLink) {
+                historyLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleNavigation('history');
+                    loadHistory();
+                });
+            }
+        });
+
+        // 添加系統檢查函數
+        async function checkHistorySystem() {
+            try {
+                const response = await fetch('/debug-history');
+                const data = await response.json();
+                console.log('系統狀態:', data);
+                alert(JSON.stringify(data, null, 2));
+            } catch (error) {
+                console.error('檢查系統狀態時發生錯誤:', error);
+                alert('檢查失敗: ' + error.message);
+            }
+        }
+
+        // 添加下載確認函數
+        function confirmDownload(filename) {
+            console.log('準備下載:', filename);
+            return true;
+        }
+
+        // 修改下載歷史報告的函數
+        async function downloadHistoryReport(filename) {
+            try {
+                // 創建一個臨時的 a 標籤
+                const link = document.createElement('a');
+                link.href = `/static/history_data/${filename}`;
+                link.download = `財務分析報告_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+                
+                // 添加到文檔中並觸發點擊
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('下載報告時發生錯誤:', error);
+                alert('下載報告失敗，請稍後再試');
+            }
+        }
+
+        // 修改刪除記錄的函數
+        async function deleteHistoryRecord(filename) {
+            if (!confirm('確定要刪除這筆記錄嗎？')) {
+                return;
+            }
+
+            try {
+                const response = fetch('/delete-history', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename })
+                });
+
+                const data = response.json();
+                if (data.status === 'success') {
+                    alert('記錄已成功刪除');
+                    loadHistory();
+                } else {
+                    alert('刪除記錄時發生錯誤：' + data.message);
+                }
+            } catch (error) {
+                console.error('刪除記錄時發生錯誤:', error);
+                alert('刪除記錄時發生錯誤');
+            }
+        }
+
+        // 修改一鍵刪除所有記錄的函數
+        async function deleteAllRecords() {
+            try {
+                if (!confirm('確定要刪除所有記錄嗎？此操作無法恢復！')) {
+                    return;
+                }
+                
+                // 立即從 UI 移除所有記錄卡片
+                const historyCards = document.querySelectorAll('.history-card');
+                historyCards.forEach(card => {
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.9)';
+                });
+                
+                // 設置延遲後清空歷史內容，顯示歡迎訊息
+                setTimeout(() => {
+                    const historyContent = document.getElementById('history-content');
+                    const historyWelcome = document.getElementById('history-welcome');
+                    
+                    historyContent.style.display = 'none';
+                    historyWelcome.style.display = 'block';
+                    historyWelcome.innerHTML = `
+                        <div class="welcome-message">
+                            <h3>歡迎使用財務分析系統</h3>
+                            <p>目前還沒有分析記錄。您可以：</p>
+                            <ul>
+                                <li>上傳檔案進行分析</li>
+                                <li>手動輸入數據進行分析</li>
+                            </ul>
+                        </div>
+                    `;
+                }, 300);
+                
+                // 在背景處理刪除請求
+                const response = await fetch('/delete-all-records', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error(`API 回傳刪除所有記錄失敗: ${result.message || '未知錯誤'}`);
+                }
+            } catch (error) {
+                console.error('刪除所有記錄時發生錯誤:', error);
+                alert('刪除處理過程中發生錯誤，正在重新載入');
+                // 重新載入歷史記錄以確保 UI 與後端同步
+                await loadHistory();
+            }
+        }
+
+        // 修改輸入方式選擇的事件監聽
+        document.getElementById('inputMethod').addEventListener('change', function() {
+            const manualInput = document.getElementById('manual-input');
+            const fileInput = document.getElementById('file-input');
+            
+            if (this.value === 'manual') {
+                manualInput.style.display = 'block';
+                fileInput.style.display = 'none';
+            } else {
+                manualInput.style.display = 'none';
+                fileInput.style.display = 'block';
+            }
+        });
+
+        // 初始化已使用的財務指標列表
+        let usedIndicators = [
+            'Net Income to Total Assets', 
+            "Net Income to Stockholder's Equity", 
+            'Equity to Liability'
+        ];
+
+        // 所有可用的財務指標
+        const allIndicators = [
+            'Operating Gross Margin', 
+            'Tax rate (A)', 
+            'Net Value Per Share (A)', 
+            'Persistent EPS in the Last Four Seasons', 
+            'Cash Flow Per Share',
+            'Revenue Per Share (Yuan ¥)', 
+            'After-tax Net Profit Growth Rate',
+            'Quick Ratio',
+            'Total debt/Total net worth', 
+            'Debt ratio %', 
+            'Contingent liabilities/Net worth',
+            'Inventory and accounts receivable/Net value',
+            'Total Asset Turnover', 
+            'Operating profit per person', 
+            'Allocation rate per person',
+            'Working Capital to Total Assets',
+            'Quick Assets/Total Assets',
+            'Current Assets/Total Assets', 
+            'Cash/Total Assets', 
+            'Cash/Current Liability',
+            'Operating Funds to Liability', 
+            'Working Capital/Equity',
+            'Long-term Liability to Current Assets', 
+            'Total expense/Assets', 
+            'Fixed Assets to Assets', 
+            'Equity to Long-term Liability', 
+            'Cash Flow to Total Assets',
+            'Cash Flow to Liability',
+            'CFO to Assets',
+            'Cash Flow to Equity', 
+            'Current Liability to Current Assets',
+            'Liability-Assets Flag', 
+            'Net Income to Total Assets', 
+            "Net Income to Stockholder's Equity", 
+            'Equity to Liability'
+
+        ];
+
+        // 聯絡表單提交處理
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            // 禁用提交按鈕，避免重複點擊
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '分析中...';
+            submitBtn.style.background = '#6c757d';
+            
+            try {
+                const inputMethod = document.getElementById('inputMethod').value;
+                const threshold = document.getElementById('threshold').value;
+
+                if (inputMethod === 'file') {
+                    const fileInput = document.getElementById('file-upload');
+                    const file = fileInput.files[0];
+                    
+                    if (!file) {
+                        alert('請選擇檔案');
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('threshold', threshold);
+                    
+                    const response = await fetch('/submit-file', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`伺服器錯誤 (${response.status})`);
+                    }
+                    
+                    const data = await response.json();
+                    handlePredictionResult(data);
+                } else {
+                    // 手動輸入模式
+                    const indicators = [];
+                    let hasInvalidInput = false;
+                    
+                    // 收集所有輸入欄位的值，包括預設欄位
+                    document.querySelectorAll('#fields-container .input-group').forEach(field => {
+                        const select = field.querySelector('select');
+                        const input = field.querySelector('input');
+                        
+                        if (select && input && input.value) {
+                            const value = parseFloat(input.value);
+                            if (value >= 0.0000 && value <= 999.9999) {
+                                indicators.push({
+                                    indicator: select.value || select.options[0].text,
+                                    value: value
+                                });
+                            } else {
+                                hasInvalidInput = true;
+                                alert(`請確保 ${select.value || select.options[0].text} 的數值在0.0000到999.9999之間`);
+                            }
+                        }
+                    });
+
+                    if (hasInvalidInput) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '開始分析';
+                        submitBtn.style.background = '#28a745';
+                        return;
+                    }
+                    
+                    if (document.getElementById('inputMethod').value == 'manual') {
+                        if (indicators.length < 3) {
+                            alert("請至少輸入3個指標的數值（包含預設欄位）！");
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = '開始分析';
+                            submitBtn.style.background = '#28a745';
+                            return;
+                        }
+                    }
+
+                    const response = await 
+                    fetch('/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            indicators: indicators,
+                            threshold: parseFloat(threshold)
+                        })
+                    });
+
+                    const data = await response.json();
+                    handlePredictionResult(data);
+                }
+            } catch (error) {
+                console.error('提交錯誤:', error);
+                alert('提交時發生錯誤: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '開始分析';
+                submitBtn.style.background = '#28a745';
+            }
+        }
+
+        // 初始化頁面時添加事件監聽器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 顯示首頁
+            handleNavigation('home');
+            
+            // 初始化 AOS
+            AOS.init({
+                duration: 800,
+                once: true
+            });
+
+            // 初始化 Threshold
+            updateThreshold(0.500);
+
+            // 加載歷史記錄
+            loadHistory();
+
+            // 綁定新增欄位按鈕事件
+            const addFieldBtn = document.getElementById('add-field-btn');
+            if (addFieldBtn) {
+                addFieldBtn.addEventListener('click', addNewField);
+            }
+            
+            // 綁定提交按鈕事件
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', handleSubmit);
+            }
+            
+            // 綁定預設欄位的輸入驗證
+            const inputs = document.querySelectorAll('#fields-container input[type="number"]');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateInput(this);
+                });
+            });
+
+            // 綁定開始分析按鈕事件
+            const ctaButton = document.querySelector('.cta-button');
+            if (ctaButton) {
+                ctaButton.addEventListener('click', function() {
+                    handleNavigation('analysis');
+                });
+            }
+
+            // 綁定導航連結事件
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    handleNavigation(targetId);
+                });
+            });
+
+            // 綁定 Threshold 事件
+            const thresholdInput = document.getElementById('threshold');
+            if (thresholdInput) {
+                thresholdInput.addEventListener('input', function() {
+                    updateThreshold(this.value);
+                });
+            }
+
+            // 綁定輸入方式選擇事件
+            const inputMethod = document.getElementById('inputMethod');
+            if (inputMethod) {
+                inputMethod.addEventListener('change', function() {
+                    const manualInput = document.getElementById('manual-input');
+                    const fileInput = document.getElementById('file-input');
+                    
+                    if (this.value === 'manual') {
+                        manualInput.style.display = 'block';
+                        fileInput.style.display = 'none';
+                    } else {
+                        manualInput.style.display = 'none';
+                        fileInput.style.display = 'block';
+                    }
+                });
+            }
+
+            // 修改頁面寬度樣式
+            const welcomeSections = document.querySelectorAll('.welcome-section');
+            welcomeSections.forEach(section => {
+                section.style.maxWidth = '600px';
+            });
+        });
+           // 獲取模型選擇下拉式選單
+           const modelSelect = document.getElementById('modelSelect');
+           
+           // 監聽模型選擇的變化
+           modelSelect.addEventListener('change', function() {
+               const selectedModel = this.value;
+               console.log('選擇的模型:', selectedModel);
+               // 這裡可以添加根據選擇的模型進行相應處理的代碼
+           });
+
+
+           // 修改提交按鈕的點擊事件處理
+           document.getElementById('submit-btn').addEventListener('click', function() {
+                const selectedModel = modelSelect.value;
+                const indicators = [];
+                const inputGroups = document.querySelectorAll('.input-group');
+                
+                inputGroups.forEach(group => {
+                   const select = group.querySelector('select');
+                   const input = group.querySelector('input');
+                   if (select && input && input.value) {
+                       indicators.push({
+                           indicator: select.value,
+                           value: parseFloat(input.value)
+                       });
+                   }
+               });
+                const fileInput = document.etElementById('fileInput');
+                const file = fileInput.files[0];
+                if (!file) {
+                    alert('請選擇要上傳的檔案');
+                    return;
+                }
+                // 確保 file 是有效的檔案
+                const validFileTypes = ['text/csv', 'application/json', 'application/vnd.ms-excel'];
+                if (!validFileTypes.includes(file.type)) {
+                    alert('檔案格式錯誤，請選擇 CSV 或 JSON 檔案');
+                    return;
+                }
+                const inputMethodValue = document.getElementById('inputMethod').value;
+                if (inputMethodValue == 'manual') {
+                        if (indicators.length < 3) {
+                            alert('請至少輸入3個指標');
+                            return;
+                        };
+                };               
+           });
+
+        // 新增欄位函數
+        function addNewField() {
+            const container = document.getElementById('fields-container');
+            const availableIndicators = allIndicators.filter(ind => !usedIndicators.includes(ind));
+            
+            if (availableIndicators.length === 0) {
+                alert('已使用所有可用的財務指標');
+                return;
+            }
+
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'input-group';
+            
+            const select = document.createElement('select');
+            select.innerHTML = '<option value="">選擇財務指標</option>' +
+                availableIndicators.map(ind => `<option value="${ind}">${ind}</option>`).join('');
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.placeholder = '輸入數值';
+            input.min = '0.0000';
+            input.max = '999.9999';
+            input.step = '0.0001';
+            input.pattern = '[0-9]*[.,]?[0-9]{0,4}';
+            input.oninput = function() { validateInput(this); };
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'preset-label';
+            removeBtn.style.background = '#dc3545';
+            removeBtn.innerHTML = '刪除';
+            removeBtn.onclick = function() {
+                const selectedValue = select.value;
+                if (selectedValue) {
+                    const index = usedIndicators.indexOf(selectedValue);
+                    if (index > -1) {
+                        usedIndicators.splice(index, 1);
+                    }
+                }
+                container.removeChild(fieldDiv);
+            };
+
+            select.onchange = function() {
+                const selectedValue = this.value;
+                if (selectedValue) {
+                    usedIndicators.push(selectedValue);
+                }
+            };
+
+            fieldDiv.appendChild(select);
+            fieldDiv.appendChild(input);
+            fieldDiv.appendChild(removeBtn);
+            container.appendChild(fieldDiv);
+        }
+
+        // 驗證輸入值
+        function validateInput(input) {
+            let value = input.value.replace(/[^0-9.]/g, '');
+            let parts = value.split('.');
+            
+            // 处理整数部分
+            if (parts[0].length > 3) {
+                parts[0] = parts[0].slice(0, 3);
+            }
+            
+            // 处理小数部分
+            if (parts.length > 1) {
+                if (parts[1].length > 4) {
+                    parts[1] = parts[1].slice(0, 4);
+                }
+                value = parts[0] + '.' + parts[1];
+            } else {
+                value = parts[0];
+            }
+            
+            // 转换为数值并验证范围
+            let numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+                numValue = Math.max(0, Math.min(999.9999, numValue));
+                input.value = numValue.toFixed(4);
+            } else {
+                input.value = '';
+            }
+        }
+
+        // 添加一個檢查按鈕到歷史數據頁面
+        async function checkSystem() {
+            try {
+                const response = await fetch('/check-system');
+                const data = await response.json();
+                console.log('系統檢查結果:', data);
+                alert(JSON.stringify(data, null, 2));
+            } catch (error) {
+                console.error('檢查時發生錯誤:', error);
+                alert('檢查失敗: ' + error);
+            }
+        }
+
+        // 在歷史數據頁面添加檢查按鈕
+        function loadHistory() {
+            // ... 原有代碼 ...
+            let historyHTML = `
+                <div class="history-container">
+                    <button onclick="checkSystem()" class="check-btn" style="margin-right: 10px;">
+                        檢查系統
+                    </button>
+                    <button onclick="deleteAllRecords()" class="delete-all-btn">
+                        刪除所有記錄
+                    </button>
+                    <div class="history-records">`;
+            // ... 原有代碼 ...
+        }
+
+        // 添加除錯信息顯示函數
+        async function showDebugInfo() {
+            try {
+                const response = await fetch('/debug-history');
+                const debugInfo = await response.json();
+                const debugDiv = document.getElementById('debug-info');
+                debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+                debugDiv.innerHTML = `<pre>${JSON.stringify(debugInfo, null, 2)}</pre>`;
+            } catch (error) {
+                console.error('獲取除錯信息失敗:', error);
+            }
+        }
+
+        // 財務指標數據
+        const financialMetrics = {
+            // 1. Total debt/Total net worth (總負債對淨值比率)
+            total_debt_total_net_worth: {
+                category: "財務結構",
+                description: "測量公司總負債對股東權益的比例，衡量債權人與股東在企業融資中的相對地位，反映財務槓桿水平。",
+                formula: "總負債 ÷ 淨值",
+                range: "0.3 ~ 0.6"
+            },
+            // 2. Debt ratio % (負債比率%)
+            debt_ratio_percent: {
+                category: "財務結構",
+                description: "總負債占總資產的百分比，衡量公司資產中有多少比例是由債權人提供的資金所支持的。",
+                formula: "總負債 ÷ 總資產 × 100%",
+                range: "30% ~ 60%"
+            },
+            // 3. Net worth/Assets (淨值對資產比率)
+            net_worth_assets: {
+                category: "財務結構",
+                description: "股東權益占總資產的比例，又稱自有資金比率，反映公司的財務獨立性與抵禦風險的能力。",
+                formula: "淨值 ÷ 總資產",
+                range: "40% ~ 70%"
+            },
+            // 4. Long-term fund suitability ratio (A) (長期資金適合率A)
+            long_term_fund_suitability_ratio_a: {
+                category: "財務結構",
+                description: "評估長期資金(股東權益與長期負債)對長期資產的覆蓋程度，反映公司長期資金來源與運用的匹配性。",
+                formula: "(權益+長期負債) ÷ (固定資產+長期投資)",
+                range: "0.8 ~ 1.2"
+            },
+            // 5. Borrowing dependency (借款依存度)
+            borrowing_dependency: {
+                category: "財務結構",
+                description: "衡量公司對外部借款的依賴程度，計算總借款占總資產的比重，反映企業融資結構中的借款成分。",
+                formula: "總借款 ÷ 總資產",
+                range: "0.2 ~ 0.5"
+            },
+            // 6. Net Value Per Share (A) (每股淨值A)
+            net_value_per_share_a: {
+                category: "財務結構",
+                description: "每股所代表的股東權益金額，反映公司每股股票的帳面價值，是投資者評估股票內在價值的基本指標。",
+                formula: "股東權益 ÷ 流通在外股數",
+                range: "高於面值且穩定成長為佳"
+            },
+            // 7. Net Value Per Share (B) (每股淨值B)
+            net_value_per_share_b: {
+                category: "財務結構",
+                description: "每股所代表的有形資產淨值，即扣除無形資產後的每股淨值，更側重於評估公司的實質資產支持。",
+                formula: "有形資產淨值 ÷ 流通在外股數",
+                range: "高於面值且穩定成長為佳"
+            },
+            // 8. Net Value Per Share (C) (每股淨值C)
+            net_value_per_share_c: {
+                category: "財務結構",
+                description: "每股所代表的淨資產價值，考慮了資產重估增值等因素，提供更接近市場價值的每股淨值評估。",
+                formula: "淨資產 ÷ 流通在外股數",
+                range: "高於面值且穩定成長為佳"
+            },
+            // 9. NetValueGrowthRate(淨值成長率)
+            net_value_growth_rate: {
+                category: "財務結構",
+                description: "衡量公司淨值(股東權益)的成長速度，反映企業通過留存收益或增資等方式增強自有資本實力的能力。",
+                formula: "(本期淨值-前期淨值)÷前期淨值",
+                range: "0% ~ 20%"
+            },
+            // 10. Liability to Equity (負債對權益比率)
+            liability_to_equity: {
+                category: "財務結構",
+                description: "衡量公司負債與股東權益的比例關係，反映企業的財務槓桿程度和長期償債風險，數值越高表示財務風險越大。",
+                formula: "總負債 ÷ 總權益",
+                range: "0.5 ~ 1.0"
+            },
+            // 11. Equity to Liability (權益對負債比率)
+            equity_to_liability: {
+                category: "財務結構",
+                description: "評估股東權益對負債的覆蓋程度，是負債對權益比率的倒數，顯示公司自有資金對外部借款的比例關係。",
+                formula: "總權益 ÷ 總負債",
+                range: "1.0 ~ 2.0"
+            },
+            // 12. Current Liability to Equity (流動負債對權益比率)
+            current_liability_to_equity: {
+                category: "財務結構",
+                description: "測量公司短期負債與股東權益的比例，評估企業短期償債壓力與融資結構的平衡性。",
+                formula: "流動負債 ÷ 總權益",
+                range: "0.2 ~ 0.5"
+            },
+            // 13. Long-term Liability to Current Assets (長期負債對流動資產比率)
+            long_term_liability_to_current_assets: {
+                category: "財務結構",
+                description: "衡量長期負債與流動資產的比例關係，反映公司使用長期負債支持短期資產的程度，數值過高可能導致資金結構不當。",
+                formula: "長期負債 ÷ 流動資產",
+                range: "0.1 ~ 0.3"
+            },
+            // 14. Equity to Long-term Liability (權益對長期負債比率)
+            equity_to_long_term_liability: {
+                category: "財務結構",
+                description: "評估股東權益對長期負債的保障程度，反映公司長期財務槓桿的安全性和償債能力。",
+                formula: "總權益 ÷ 長期負債",
+                range: "1.5 ~ 3.0"
+            },
+            // 15. Fixed Assets to Assets (固定資產對資產比率)
+            fixed_assets_to_assets: {
+                category: "財務結構",
+                description: "衡量固定資產在總資產中的占比，反映公司資產結構的剛性程度與資產運用的彈性空間。",
+                formula: "固定資產 ÷ 總資產",
+                range: "依產業特性而異，製造業較高"
+            },
+            // 16. Liability-Assets Flag (負債大於資產標記)
+            liability_assets_flag: {
+                category: "財務結構",
+                description: "負債是否超過資產的警示指標，為1時表示公司已處於技術性破產狀態，淨值為負。",
+                formula: "若負債>資產 則為1；否則為0",
+                range: "應為0"
+            },
+            // 17. Contingent liabilities/Net worth (或有負債對淨值比率)
+            contingent_liabilities_net_worth: {
+                category: "財務結構",
+                description: "評估或有負債對公司淨值的潛在影響程度，反映未來可能實現的債務風險對股東權益的威脅。",
+                formula: "或有負債 ÷ 淨值",
+                range: "< 0.05"
+            },
+            // 18. Current Ratio (流動比率)
+            current_ratio: {
+                category: "償債能力",
+                description: "衡量企業流動資產對流動負債的覆蓋能力，是評估短期償債能力的基本指標，反映公司短期財務彈性。",
+                formula: "流動資產 ÷ 流動負債",
+                range: "1.5 ~ 3.0"
+            },
+            // 19. Quick Ratio (速動比率)
+            quick_ratio: {
+                category: "償債能力",
+                description: "評估公司速動資產(流動資產減存貨)對流動負債的覆蓋能力，提供更嚴格的短期償債能力測試。",
+                formula: "速動資產 ÷ 流動負債",
+                range: "1.0 ~ 2.0"
+            },
+            // 20. Interest Expense Ratio (利息支出率)
+            interest_expense_ratio: {
+                category: "償債能力",
+                description: "測量利息支出占營業收入的比例，反映企業收入中有多少比例用於支付債務成本，數值越低越佳。",
+                formula: "利息支出 ÷ 營業收入",
+                range: "3% ~ 10%"
+            },
+            // 21. Interest-bearing debt interest rate (附息負債利率)
+            interest_bearing_debt_interest_rate: {
+                category: "償債能力",
+                description: "衡量公司附息負債的平均利率水平，反映企業所承擔的債務融資成本，是評估債務負擔的重要指標。",
+                formula: "利息費用 ÷ 平均附息負債",
+                range: "4% ~ 8%"
+            },
+            // 22. Continuous interest rate (after tax) (持續性利息比率-稅後)
+            continuous_interest_rate_after_tax: {
+                category: "償債能力",
+                description: "評估公司持續性的稅後利息支出占營業收入的比例，提供對長期債務成本負擔的評估。",
+                formula: "持續性利息費用(稅後) ÷ 營業收入",
+                range: "3% ~ 7%"
+            },
+            // 23. Current Liability to Assets (流動負債對資產比率)
+            current_liability_to_assets: {
+                category: "償債能力",
+                description: "測量流動負債占總資產的比例，評估公司短期償債壓力與總體資產配置的關係。",
+                formula: "流動負債 ÷ 總資產",
+                range: "0.3 ~ 0.6"
+            },
+            // 24. Operating Funds to Liability (營運資金對負債比率)
+            operating_funds_to_liability: {
+                category: "償債能力",
+                description: "衡量公司營運資金(流動資產減流動負債)對總負債的覆蓋程度，反映企業經營活動產生的資金對債務的保障能力。",
+                formula: "營運資金 ÷ 總負債",
+                range: "0.3 ~ 0.7"
+            },
+            // 25. Cash/Current Liability (現金對流動負債比率)
+            cash_current_liability: {
+                category: "償債能力",
+                description: "評估公司現金對流動負債的覆蓋能力，反映企業直接用最具流動性資產償還短期債務的能力。",
+                formula: "現金 ÷ 流動負債",
+                range: "0.2 ~ 0.5"
+            },
+            // 26. QuickAssets/CurrentLiability(速動資產對流動負債比率)
+            quick_assets_current_liability: {
+                category: "償債能力",
+                description: "衡量企業速動資產對流動負債的覆蓋程度，又稱速動比率，反映排除存貨後的短期償債能力。",
+                formula: "速動資產 ÷ 流動負債",
+                range: "1.0 ~ 1.5"
+            },
+            // 27. Current Liability to Current Assets (流動負債對流動資產比率)
+            current_liability_to_current_assets: {
+                category: "償債能力",
+                description: "評估流動負債相對於流動資產的比例，是流動比率的倒數，數值越低表示短期償債能力越強。",
+                formula: "流動負債 ÷ 流動資產",
+                range: "0.4 ~ 0.7"
+            },
+            // 28. Current Liabilities/Liability (流動負債對總負債比率)
+            current_liabilities_liability: {
+                category: "償債能力",
+                description: "衡量流動負債在總負債中的占比，反映公司負債結構的期限組成和短期償債壓力。",
+                formula: "流動負債 ÷ 總負債",
+                range: "0.4 ~ 0.8"
+            },
+            // 29. Interest Coverage Ratio (利息保障倍數)
+            interest_coverage_ratio: {
+                category: "償債能力",
+                description: "衡量公司稅息前利潤(EBIT)對利息費用的覆蓋能力，評估企業支付債務利息的能力與財務風險。",
+                formula: "EBIT ÷ 利息費用",
+                range: "3 ~ 10"
+            },
+            // 30. No-credit Interval (無信用區間)
+            no_credit_interval: {
+                category: "償債能力",
+                description: "評估公司在不獲得新的外部融資情況下，僅依靠速動資產減去流動負債後能維持正常運營的天數。",
+                formula: "(速動資產-流動負債) ÷ 每日營運支出",
+                range: "30 ~ 90 天"
+            },
+            // 31. Degree of Financial Leverage (DFL) (財務槓桿度)
+            degree_of_financial_leverage: {
+                category: "償債能力",
+                description: "衡量稅息前利潤(EBIT)變動對每股盈餘(EPS)變動的影響程度，反映公司使用財務槓桿的敏感性。",
+                formula: "EBIT變動百分比 ÷ EPS變動百分比",
+                range: "1.5 ~ 3.0"
+            },
+            // 32. Operating Expense Rate (營業費用率)
+            operating_expense_rate: {
+                category: "經營績效",
+                description: "衡量營業費用占營業收入的比例，反映公司在銷售、管理和研發等方面的投入水平和成本控制能力。",
+                formula: "營業費用 ÷ 營業收入",
+                range: "10% ~ 25%"
+            },
+            // 33. Research and development expense rate (研發費用率)
+            research_and_development_expense_rate: {
+                category: "經營績效",
+                description: "評估研發費用占營業收入的比例，反映公司在產品和技術創新方面的投入強度和未來競爭力建設。",
+                formula: "研發費用 ÷ 營業收入",
+                range: "3% ~ 10%"
+            },
+            // 34. Non-industry income and expenditure/revenue (業外收支對營收比)
+            non_industry_income_expenditure_revenue: {
+                category: "經營績效",
+                description: "衡量非營業收支淨額相對於營業收入的比例，反映公司核心業務外的收益或損失對整體經營的影響。",
+                formula: "業外收支淨額 ÷ 營業收入",
+                range: "-5% ~ 5%"
+            },
+            // 35. Revenue Per Share (Yuan 瞼) (每股營收)
+            revenue_per_share: {
+                category: "經營績效",
+                description: "衡量每股股票所對應的銷售收入，反映公司創造收入的能力在每股層面的表現。",
+                formula: "營業收入 ÷ 加權平均流通股數",
+                range: "持續成長為佳"
+            },
+            // 36. Total Asset Growth Rate (總資產成長率)
+            total_asset_growth_rate: {
+                category: "經營績效",
+                description: "評估公司總資產的增長速度，反映企業規模擴張和資產積累的能力，是衡量整體成長性的指標。",
+                formula: "(本期總資產-前期總資產) ÷ 前期總資產",
+                range: "5% ~ 20%"
+            },
+            // 37. Total Asset Turnover (總資產周轉率)
+            total_asset_turnover: {
+                category: "經營績效",
+                description: "衡量公司利用總資產創造銷售收入的效率，反映資產的整體利用效率和管理效能。",
+                formula: "營業收入 ÷ 平均總資產",
+                range: "0.5 ~ 2.0 次"
+            },
+            // 38. Accounts Receivable Turnover (應收帳款周轉率)
+            accounts_receivable_turnover: {
+                category: "經營績效",
+                description: "評估公司收回應收帳款的速度和效率，反映企業信用政策的嚴謹度和應收帳款管理能力。",
+                formula: "營業收入 ÷ 平均應收帳款",
+                range: "5 ~ 10 次"
+            },
+            // 39. Average Collection Days (平均收款天數)
+            average_collection_days: {
+                category: "經營績效",
+                description: "衡量公司從銷售到收回應收帳款所需的平均天數，是應收帳款周轉率的時間表達方式。",
+                formula: "365 ÷ 應收帳款周轉率",
+                range: "30 ~ 60 天"
+            },
+            // 40. InventoryTurnoverRate (存貨周轉率)
+            inventory_turnover_rate: {
+                category: "經營績效",
+                description: "評估公司存貨銷售和更新的速度，反映存貨管理效率和存貨商品的市場接受度。",
+                formula: "銷貨成本÷平均存貨",
+                range: "4 ~ 8 次/年"
+            },
+            // 41. Fixed Assets Turnover Frequency (固定資產周轉率)
+            fixed_assets_turnover_frequency: {
+                category: "經營績效",
+                description: "衡量公司利用固定資產創造銷售收入的效率，反映固定資產投資的使用效益和產出能力。",
+                formula: "營業收入 ÷ 平均固定資產",
+                range: "1 ~ 3 次/年"
+            },
+            // 42. Net Worth Turnover Rate (淨值周轉率)
+            net_worth_turnover_rate: {
+                category: "經營績效",
+                description: "評估公司利用股東權益創造銷售收入的效率，反映自有資金的使用效益和經營能力。",
+                formula: "營業收入 ÷ 平均淨值",
+                range: "1 ~ 3 次/年"
+            },
+            // 43. Revenue per person (人均營收)
+            revenue_per_person: {
+                category: "經營績效",
+                description: "衡量每位員工創造的平均營業收入，是評估人力資源生產效率和人均貢獻的重要指標。",
+                formula: "營業收入 ÷ 員工人數",
+                range: "依產業而異"
+            },
+            // 44. Operating profit per person (人均營業利潤)
+            operating_profit_per_person: {
+                category: "經營績效",
+                description: "評估每位員工貢獻的平均營業利潤，反映人力資源的價值創造效率和經營管理水平。",
+                formula: "營業利潤 ÷ 員工人數",
+                range: "依產業而異"
+            },
+            // 45. Allocation rate per person (人均分配率)
+            allocation_rate_per_person: {
+                category: "經營績效",
+                description: "衡量每位員工獲得的平均分配額，反映企業利潤分配政策和員工獲得的經濟回報水平。",
+                formula: "分配總額 ÷ 員工人數",
+                range: "依產業而異"
+            },
+            // 46. Current Asset Turnover Rate (流動資產周轉率)
+            current_asset_turnover_rate: {
+                category: "經營績效",
+                description: "評估公司利用流動資產創造銷售收入的效率，反映流動資產管理和運用的效益水平。",
+                formula: "營業收入 ÷ 平均流動資產",
+                range: "1 ~ 3 次/年"
+            },
+            // 47. Quick Asset Turnover Rate (速動資產周轉率)
+            quick_asset_turnover_rate: {
+                category: "經營績效",
+                description: "衡量公司利用速動資產(現金、短期投資、應收帳款等)創造銷售收入的效率，提供對高流動性資產使用效率的評估。",
+                formula: "營業收入 ÷ 平均速動資產",
+                range: "1 ~ 2 次/年"
+            },
+            // 48. Working capitcal Turnover Rate (營運資金周轉率)
+            working_capital_turnover_rate: {
+                category: "經營績效",
+                description: "評估公司利用營運資金(流動資產減流動負債)創造銷售收入的效率，反映營運資金管理和運用效益。",
+                formula: "營業收入 ÷ 平均營運資金",
+                range: "1 ~ 3 次/年"
+            },
+            // 49. Cash Turnover Rate (現金周轉率)
+            cash_turnover_rate: {
+                category: "經營績效",
+                description: "衡量公司利用現金創造銷售收入的效率，反映現金資產的周轉速度和使用效益。",
+                formula: "營業收入 ÷ 平均現金",
+                range: "1 ~ 3 次/年"
+            },
+            // 50. Total income/Total expense (總收入對總支出比率)
+            total_income_total_expense: {
+                category: "經營績效",
+                description: "評估公司總收入對總支出的覆蓋程度，反映整體收支平衡狀況和經營效益，比值越高表示效益越好。",
+                formula: "總收入 ÷ 總支出",
+                range: "1.2 ~ 2.0"
+            },
+            // 51. Total expense/Assets (總支出對資產比率)
+            total_expense_assets: {
+                category: "經營績效",
+                description: "衡量總支出相對於總資產的比例，反映公司資產利用過程中的成本控制能力和費用管理水平。",
+                formula: "總支出 ÷ 總資產",
+                range: "0.3 ~ 0.6"
+            },
+            // 52. Inventory and accounts receivable/Net value (存貨及應收帳款對淨值比率)
+            inventory_accounts_receivable_net_worth: {
+                category: "經營績效",
+                description: "評估存貨和應收帳款合計金額與淨值的比例關係，反映營運資金占用水平與股東權益的相對關係。",
+                formula: "(存貨+應收帳款) ÷ 淨值",
+                range: "0.5 ~ 1.0"
+            },
+            // 53. ROA(C) before interest and depreciation before interest (利息和折舊前資產報酬率C)
+            roa_c_before_interest_and_depreciation: {
+                category: "獲利能力",
+                description: "衡量公司未扣除利息和折舊費用前的獲利能力，反映企業資產的原始創利能力，不受財務槓桿和折舊政策影響。",
+                formula: "(稅前淨利+利息費用+折舊費用) ÷ 平均總資產",
+                range: "5% ~ 15%"
+            },
+            // 54. ROA(A) before interest and % after tax (利息前稅後資產報酬率A)
+            roa_a_before_interest_and_after_tax: {
+                category: "獲利能力",
+                description: "評估公司在扣除所得稅但未扣除利息費用前的資產獲利能力，排除財務槓桿影響下的經營績效。",
+                formula: "(稅後淨利+利息費用×(1-稅率)) ÷ 平均總資產",
+                range: "5% ~ 15%"
+            },
+            // 55. ROA(B) before interest and depreciation after tax (利息前折舊後稅後資產報酬率B)
+            roa_b_before_interest_and_depreciation_after_tax: {
+                category: "獲利能力",
+                description: "衡量公司在扣除所得稅和折舊但未扣除利息費用前的資產獲利能力，綜合考量稅負和折舊影響後的績效。",
+                formula: "(稅後淨利+利息費用×(1-稅率)+折舊費用) ÷ 平均總資產",
+                range: "5% ~ 15%"
+            },
+            // 56. Operating Gross Margin (營業毛利率)
+            operating_gross_margin: {
+                category: "獲利能力",
+                description: "評估公司營業毛利與營業收入的比例，反映企業產品或服務的基本獲利能力和成本結構。",
+                formula: "營業毛利 ÷ 營業收入",
+                range: "20% ~ 40%"
+            },
+            // 57. Realized Sales Gross Margin (已實現銷售毛利率)
+            realized_sales_gross_margin: {
+                category: "獲利能力",
+                description: "衡量已實現銷售收入中的毛利比例，排除未實現收入影響後的實質毛利水平。",
+                formula: "已實現銷售毛利 ÷ 已實現營業收入",
+                range: "15% ~ 35%"
+            },
+            // 58. Operating Profit Rate (營業利益率)
+            operating_profit_rate: {
+                category: "獲利能力",
+                description: "評估公司營業利益與營業收入的比例，反映核心業務的獲利能力和經營效率。",
+                formula: "營業利益 ÷ 營業收入",
+                range: "10% ~ 25%"
+            },
+            // 59. Pre-tax net Interest Rate (稅前淨利率)
+            pre_tax_net_interest_rate: {
+                category: "獲利能力",
+                description: "衡量公司稅前淨利與營業收入的比例，綜合考量營業和非營業項目後的整體獲利能力。",
+                formula: "稅前淨利 ÷ 營業收入",
+                range: "10% ~ 20%"
+            },
+            // 60. After-tax net Interest Rate (稅後淨利率)
+            after_tax_net_interest_rate: {
+                category: "獲利能力",
+                description: "評估公司稅後淨利與營業收入的比例，是最終反映企業獲利能力的重要指標。",
+                formula: "稅後淨利 ÷ 營業收入",
+                range: "8% ~ 15%"
+            },
+            // 61. PersistentEPSintheLastFourSeasons (最近四季持續性EPS)
+            persistent_eps_last_four_seasons: {
+                category: "獲利能力",
+                description: "衡量公司最近四個季度的持續性每股盈餘，排除非經常性項目影響後的核心獲利能力。",
+                formula: "最近四季的持續性稅後淨利 ÷ 加權平均流通股數",
+                range: "正值且穩定為佳"
+            },
+            // 62. Operating Profit Per Share (Yuan 瞼) (每股營業利益)
+            operating_profit_per_share: {
+                category: "獲利能力",
+                description: "評估每股股票所對應的營業利益金額，反映公司核心業務在每股層面的獲利表現。",
+                formula: "營業利益 ÷ 加權平均流通股數",
+                range: "正值且穩定為佳"
+            },
+            // 63. Per Share Net profit before tax (Yuan 瞼) (每股稅前淨利)
+            per_share_net_profit_before_tax: {
+                category: "獲利能力",
+                description: "衡量每股所對應的稅前淨利金額，提供更全面的每股獲利評估。",
+                formula: "稅前淨利 ÷ 加權平均流通股數",
+                range: "正值且穩定為佳"
+            },
+            // 64. After-tax Net Profit Growth Rate (稅後淨利成長率)
+            after_tax_net_profit_growth_rate: {
+                category: "獲利能力",
+                description: "評估公司稅後淨利的成長速度，反映企業獲利能力的動態變化和成長潛力。",
+                formula: "(本期稅後淨利-前期稅後淨利) ÷ 前期稅後淨利",
+                range: "5% ~ 20%"
+            },
+            // 65. Regular Net Profit Growth Rate (經常性淨利成長率)
+            regular_net_profit_growth_rate: {
+                category: "獲利能力",
+                description: "衡量公司經常性淨利(排除非經常性項目後)的成長速度，更能反映核心業務的持續成長能力。",
+                formula: "(本期經常性淨利-前期經常性淨利) ÷ 前期經常性淨利",
+                range: "5% ~ 20%"
+            },
+            // 66. Continuous Net Profit Growth Rate (持續性淨利成長率)
+            continuous_net_profit_growth_rate: {
+                category: "獲利能力",
+                description: "評估公司持續性淨利的成長速度，側重於長期穩定的獲利成長趨勢分析。",
+                formula: "(本期持續性淨利-前期持續性淨利) ÷ 前期持續性淨利",
+                range: "5% ~ 20%"
+            },
+            // 67. Total Asset Return Growth Rate Ratio (總資產報酬成長率比)
+            total_asset_return_growth_rate_ratio: {
+                category: "獲利能力",
+                description: "衡量總資產報酬率的成長速度相對於總資產成長速度的比例，評估資產擴張是否帶來相應的報酬提升。",
+                formula: "本期ROA成長率 ÷ 總資產成長率",
+                range: "0.8 ~ 1.2"
+            },
+            // 68. Operating Profit Growth Rate (營業利益成長率)
+            operating_profit_growth_rate: {
+                category: "獲利能力",
+                description: "評估公司營業利益的成長速度，反映核心業務獲利能力的提升程度和發展動力。",
+                formula: "(本期營業利益-前期營業利益) ÷ 前期營業利益",
+                range: "5% ~ 20%"
+            },
+            // 69. Realized Sales Gross Profit Growth Rate (已實現銷售毛利成長率)
+            realized_sales_gross_profit_growth_rate: {
+                category: "獲利能力",
+                description: "衡量公司已實現銷售毛利的成長速度，反映產品或服務實質獲利能力的提升趨勢。",
+                formula: "(本期已實現毛利-前期已實現毛利) ÷ 前期已實現毛利",
+                range: "5% ~ 20%"
+            },
+            // 70. Operating profit/Paid-in capital (營業利潤對實收資本額比率)
+            operating_profit_paid_in_capital_ratio: {
+                category: "獲利能力",
+                description: "評估公司營業利潤對實收資本額的比率，反映股本的基本獲利能力和營運效率。",
+                formula: "營業利潤 ÷ 實收資本額",
+                range: "5% ~ 15%"
+            },
+            // 71. Net profit before tax/Paid-in capital (稅前純益對實收資本額比率)
+            net_profit_before_tax_paid_in_capital_ratio: {
+                category: "獲利能力",
+                description: "衡量公司稅前純益對實收資本額的比率，進一步考慮了非營業項目後的綜合獲利能力。",
+                formula: "稅前純益 ÷ 實收資本額",
+                range: "5% ~ 15%"
+            },
+            // 72. Net Income to Total Assets (ROA,資產報酬率)
+            net_income_to_total_assets: {
+                category: "獲利能力",
+                description: "評估公司稅後淨利對總資產的比率，衡量企業整體資產利用的獲利能力和管理效率。",
+                formula: "稅後淨利 ÷ 平均總資產",
+                range: "5% ~ 15%"
+            },
+            // 73. Net Income to Stockholder's Equity (ROE,權益報酬率)
+            net_income_to_stockholders_equity: {
+                category: "獲利能力",
+                description: "衡量公司稅後淨利對股東權益的比率，評估股東投入資金的回報水平和自有資金利用效率。",
+                formula: "稅後淨利 ÷ 平均股東權益",
+                range: "10% ~ 25%"
+            },
+            // 74. Gross Profit to Sales (毛利率)
+            gross_profit_to_sales: {
+                category: "獲利能力",
+                description: "評估公司毛利與銷售收入的比例，反映產品或服務的基本獲利能力和成本控制水平。",
+                formula: "毛利 ÷ 營業收入",
+                range: "20% ~ 40%"
+            },
+            // 75. Net Income Flag (淨利標記)
+            net_income_flag: {
+                category: "獲利能力",
+                description: "標示公司是否出現淨虧損的指標，為1時表示企業當期處於虧損狀態，是財務健康的基本警示。",
+                formula: "若淨利為負則為1；否則為0",
+                range: "應為0"
+            },
+            // 76. Retained Earnings to Total Assets (保留盈餘對資產比率)
+            retained_earnings_to_total_assets: {
+                category: "獲利能力",
+                description: "衡量公司累積的保留盈餘相對於總資產的比例，反映長期以來的獲利累積和自我成長能力。",
+                formula: "保留盈餘 ÷ 總資產",
+                range: "5% ~ 20%"
+            },
+            // 77. Total assets to GNP price (總資產對GNP價格比率)
+            total_assets_to_gnp_price: {
+                category: "獲利能力",
+                description: "評估公司總資產相對於國民生產總值價格指數的比例，反映企業資產規模與宏觀經濟環境的關係。",
+                formula: "總資產 ÷ GNP價格指數",
+                range: "依產業而異"
+            },
+            // 78. Cash flow rate (現金流量比率)
+            cash_flow_rate: {
+                category: "現金流量",
+                description: "評估公司營業活動現金流量對流動負債的覆蓋程度，反映短期債務的現金償付能力。",
+                formula: "營業活動現金流量 ÷ 流動負債",
+                range: "5% ~ 15%"
+            },
+            // 79. Cash Reinvestment % (現金再投資比率%)
+            cash_reinvestment_percent: {
+                category: "現金流量",
+                description: "衡量公司自由現金流量再投入到長期資產和營運資金的比例，反映企業的再投資強度與成長投入。",
+                formula: "自由現金流量 ÷ (固定資產毛額+長期投資+其他資產+營運資金) × 100%",
+                range: "10% ~ 30%"
+            },
+            // 80. Cash Flow Per Share (每股現金流量)
+            cash_flow_per_share: {
+                category: "現金流量",
+                description: "評估每股股票所對應的營業活動現金流量，提供以現金流為基礎的每股價值評估。",
+                formula: "營業活動現金流量 ÷ 加權平均流通股數",
+                range: "正值且穩定為佳"
+            },
+            // 81. Cash Flow to Sales (現金流量對銷售額比率)
+            cash_flow_to_sales: {
+                category: "現金流量",
+                description: "評估公司營業現金流量相對於銷售收入的比例，反映銷售收入轉化為現金的能力和品質。",
+                formula: "營業現金流量 ÷ 營業收入",
+                range: "5% ~ 15%"
+            },
+            // 82. Cash Flow to Total Assets (現金流量對總資產比率)
+            cash_flow_to_total_assets: {
+                category: "現金流量",
+                description: "衡量公司營業現金流量相對於總資產的比例，評估資產運用產生現金的效率。",
+                formula: "營業現金流量 ÷ 總資產",
+                range: "5% ~ 15%"
+            },
+            // 83. Cash Flow to Liability (現金流量對負債比率)
+            cash_flow_to_liability: {
+                category: "現金流量",
+                description: "評估公司營業現金流量對總負債的比率，反映通過經營活動產生的現金償還債務的能力。",
+                formula: "營業現金流量 ÷ 總負債",
+                range: "5% ~ 15%"
+            },
+            // 84. CFO to Assets (營業現金流量對資產比率)
+            cfo_to_assets: {
+                category: "現金流量",
+                description: "衡量公司營業活動產生的現金流量相對於總資產的比例，評估經營活動的現金創造效率。",
+                formula: "營業現金流量 ÷ 總資產",
+                range: "5% ~ 15%"
+            },
+            // 85. Cash Flow to Equity (現金流量對權益比率)
+            cash_flow_to_equity: {
+                category: "現金流量",
+                description: "評估公司營業現金流量對股東權益的比例，反映股東投資獲得現金回報的能力。",
+                formula: "營業現金流量 ÷ 股東權益",
+                range: "5% ~ 15%"
+            },
+            // 86. Cash/TotalAssets(現金對資產比率)
+            cash_total_assets: {
+                category: "現金流量",
+                description: "衡量公司現金資產占總資產的比例，反映企業流動性最高資產的持有水平和靈活應變能力。",
+                formula: "現金 ÷ 總資產",
+                range: "5% ~ 20%"
+            },
+            // 87. Tax rate (A) (稅率A)
+            tax_rate_a: {
+                category: "其他",
+                description: "評估公司所得稅費用占稅前淨利的比例，反映企業實際承擔的所得稅負擔水平和稅務規劃效果。",
+                formula: "所得稅費用 ÷ 稅前淨利",
+                range: "依法定稅率"
+            },
+            // 88. Working Capital to Total Assets (營運資金對總資產比率)
+            working_capital_to_total_assets: {
+                category: "其他",
+                description: "衡量公司營運資金(流動資產減流動負債)占總資產的比例，反映企業資產的流動性結構和短期財務彈性。",
+                formula: "營運資金 ÷ 總資產",
+                range: "10% ~ 30%"
+            },
+            // 89. Quick Assets/Total Assets (速動資產對總資產比率)
+            quick_assets_total_assets: {
+                category: "其他",
+                description: "評估公司速動資產占總資產的比例，反映企業高流動性資產的配置水平和短期應變能力。",
+                formula: "速動資產 ÷ 總資產",
+                range: "10% ~ 30%"
+            },
+            // 90. Current Assets/Total Assets (流動資產對總資產比率)
+            current_assets_total_assets: {
+                category: "其他",
+                description: "衡量公司流動資產占總資產的比例，反映企業資產的流動性水平和資產結構的靈活度。",
+                formula: "流動資產 ÷ 總資產",
+                range: "30% ~ 60%"
+            },
+            // 91. Inventory/Working Capital (存貨對營運資金比率)
+            inventory_working_capital_ratio: {
+                category: "其他",
+                description: "評估公司存貨占營運資金的比例，反映營運資金中被存貨占用的程度和營運資金的質量。",
+                formula: "存貨 ÷ 營運資金",
+                range: "20% ~ 50%"
+            },
+            // 92. Inventory/Current Liability (存貨對流動負債比率)
+            inventory_current_liability: {
+                category: "其他",
+                description: "衡量公司存貨相對於流動負債的比例，評估以變現速度較慢的存貨來償還短期債務的可能性。",
+                formula: "存貨 ÷ 流動負債",
+                range: "20% ~ 50%"
+            },
+            // 93. Working Capital/Equity (營運資金對權益比率)
+            working_capital_equity: {
+                category: "其他",
+                description: "評估公司營運資金占股東權益的比例，反映股東投入資金用於支持短期營運需求的程度。",
+                formula: "營運資金 ÷ 股東權益",
+                range: "20% ~ 50%"
+            },
+            // 94. Current Liability to Liability (流動負債對負債比率)
+            current_liability_liability: {
+                category: "其他",
+                description: "衡量公司流動負債占總負債的比例，反映負債結構中的期限組成和短期償債壓力。",
+                formula: "流動負債 ÷ 總負債",
+                range: "依產業特性而異"
+            }
+        };
+
+        // 初始化財務指標選擇器
+        document.addEventListener('DOMContentLoaded', function() {
+          const select = document.getElementById('financialMetric');
+          const resultSection = document.getElementById('resultSection');
+          
+          // 取得所有 key 並轉換顯示文字
+          const sortedKeys = Object.keys(financialMetrics).sort((a, b) => {
+            const textA = a.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const textB = b.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return textA.localeCompare(textB);
+          });
+          
+          sortedKeys.forEach(key => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            select.appendChild(option);
+          });
+          
+          // 當選擇變更時顯示對應的指標資訊
+          select.addEventListener('change', function() {
+            const selectedValue = this.value;
+            if (selectedValue) {
+              const metric = financialMetrics[selectedValue];
+              document.getElementById('metricCategory').textContent = metric.category;
+              document.getElementById('metricDescription').textContent = metric.description;
+              document.getElementById('metricFormula').textContent = metric.formula;
+              document.getElementById('metricRange').textContent = metric.range;
+              resultSection.style.display = 'block';
+            } else {
+              resultSection.style.display = 'none';
+            }
+          });
+        });
+
+        function validateInput(input) {
+            let value = input.value; // 直接讀取字串，不轉換數字
+
+            // 確保值是數字或空值（允許使用者清除輸入框）
+            if (value === '' || isNaN(value)) {
+                input.value = '';
+                return;
+            }
+
+            // 確保數值範圍在 0 ~ 999.9999 之間
+            let numericValue = parseFloat(value);
+            if (numericValue < 0) {
+                input.value = 0;  // 允許 0
+            } else if (numericValue > 999.9999) {
+                input.value = 999.9999;
+            }
+
+            // 如果有小數，確保最多 4 位
+            if (value.includes('.')) {
+                let parts = value.split('.');
+                if (parts[1].length > 4) {
+                    input.value = numericValue.toFixed(4);
+                }
+            }
+        }
+
+
+        function updateThresholdDescription(value) {
+            let icon, title, text, title2, text2;
+            
+            if (value <= 0.4) {
+                icon = '🔔';
+                title = '風險評估標準';
+                text = '保守，容易標為高風險';
+                title2 = '適用場景';
+                text2 = '風險偏好較低，希望預警更靈敏';
+            } else if (value <= 0.7) {
+                icon = '⚖️';
+                title = '風險評估標準';
+                text = '平衡，標準閾值';
+                title2 = '適用場景';
+                text2 = '大多數應用，標準風險評估';
+            } else {
+                icon = '🎯';
+                title = '風險評估標準';
+                text = '嚴格，減少誤報高風險';
+                title2 = '適用場景';
+                text2 = '風險容忍度較高，避免誤判';
+            }
+            // ... existing code ...
+        }
+
+        // 載入歷史記錄
+        function loadHistory() {
+            fetch('/get-history')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("獲取的歷史數據：", data);
+
+                    if (data.is_empty) {
+                        // 如果沒有歷史記錄，顯示「歡迎訊息」
+                        document.getElementById('history-welcome').style.display = 'block';
+                        document.getElementById('history-content').style.display = 'none';
+                    } else {
+                        // 否則顯示歷史數據
+                        document.getElementById('history-welcome').style.display = 'none';
+                        document.getElementById('history-content').style.display = 'block';
+
+                        let historyHtml = "";
+                        data.history.forEach(record => {
+                            historyHtml += `
+                                <div class="history-record">
+                                    <p>分析時間: ${new Date(record.timestamp).toLocaleString()}</p>
+                                    <p>財務健康度: ${record.financial_health}</p>
+                                    <img src="/static/history_data/${record.filename}" alt="分析結果圖片" style="width: 100%; max-width: 150px;">
+                                </div>
+                            `;
+                        });
+
+                        document.getElementById('history-content').innerHTML = historyHtml;
+                    }
+                })
+                .catch(error => {
+                    console.error("獲取歷史數據失敗:", error);
+                });
+        }
+
+        // 當頁面載入時加載歷史數據
+        document.addEventListener("DOMContentLoaded", loadHistory);
+
+        // 下載報告
+        function downloadReport(filename) {
+            if (!filename) {
+                alert('找不到報告檔案');
+                return;
+            }
+            
+            fetch(`/download-report/${filename}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('下載失敗');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    console.error('下載報告失敗:', error);
+                    alert('下載報告時發生錯誤');
+                });
+        }
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', loadHistory);
+
+        // 更新歷史記錄顯示
+        function updateHistoryDisplay() {
+            const historyContent = document.getElementById('history-content');
+            const historyWelcome = document.getElementById('history-welcome');
+            
+            if (historyRecords.length === 0) {
+                historyContent.style.display = 'none';
+                historyWelcome.style.display = 'block';
+            } else {
+                historyContent.style.display = 'block';
+                historyWelcome.style.display = 'none';
+                // 更新歷史記錄內容
+                // ... 其他歷史記錄顯示邏輯 ...
+            }
+        }
+
+        function createIndicatorInput(indicator) {
+            return `
+                <div class="indicator-input">
+                    <label for="${indicator}">${indicator}</label>
+                    <input type="number" 
+                           id="${indicator}" 
+                           name="${indicator}" 
+                           placeholder="請輸入數值"
+                           step="any"
+                           min=""
+                           max=""
+                           required>
+                </div>
+            `;
+        }
+
+// -------------------------------------------------------------------------------------------------------------
+
+        async function loadHistory() {
+            try {
+                const response = await fetch('/get-history');
+                const data = await response.json();
+
+                const historyContent = document.getElementById('history-content');
+                const historyWelcome = document.getElementById('history-welcome');
+
+                if (!data || data.is_empty || !data.history || data.history.length === 0) {
+                    historyContent.style.display = 'none';
+                    historyWelcome.style.display = 'block';
+                    historyWelcome.innerHTML = `
+                        <div class="welcome-message">
+                            <h3>歡迎使用財務分析系統</h3>
+                            <p>目前還沒有分析記錄。您可以：</p>
+                            <ul>
+                                <li>上傳檔案進行分析</li>
+                                <li>手動輸入數據進行分析</li>
+                            </ul>
+                        </div>
+                    `;
+                    return;
+                }
+
+                historyContent.style.display = 'block';
+                historyWelcome.style.display = 'none';
+
+                const historyList = document.createElement('div');
+                historyList.className = 'history-grid';
+
+                data.history.forEach(record => {
+                    const recordCard = document.createElement('div');
+                    recordCard.className = 'history-card';
+                    recordCard.innerHTML = `
+                        <div class="history-card-header">
+                            <h3 class="analysis-date">分析報告 ${new Date(record.timestamp).toLocaleDateString()}</h3>
+                        </div>
+                        <div class="history-card-content">
+                            <div class="history-info">
+                                <p class="financial-health">財務健康度：${(record.financial_health * 100).toFixed(2)}%</p> <!-- 顯示財務健康度 -->
+                                <p class="prediction ${record.prediction > 0.5 ? 'healthy' : 'unhealthy'}">
+                                    預測結果：${record.prediction > 0.5 ? '財務健康' : '可能破產'}
+                                </p>
+                            </div>
+                            <button onclick="deleteRecord('${record.filename}')" class="delete-btn">
+                                <i class="fas fa-trash"></i> 刪除記錄
+                            </button>
+                        </div>
+                    `;
+                    historyList.appendChild(recordCard);
+                });
+
+                historyContent.innerHTML = '';
+                historyContent.appendChild(historyList);
+
+            } catch (error) {
+                console.error('載入歷史記錄時發生錯誤:', error);
+                const historyContent = document.getElementById('history-content');
+                const historyWelcome = document.getElementById('history-welcome');
+                historyContent.style.display = 'none';
+                historyWelcome.style.display = 'block';
+                historyWelcome.innerHTML = `
+                    <div class="error-message">
+                        <h3>載入歷史記錄時發生錯誤</h3>
+                        <p>請稍後再試。如果問題持續存在，請聯繫系統管理員。</p>
+                    </div>
+                `;
+            }
+        }
+// -------------------------------------------------------------------------------------------------------------
+        // 添加相關的 CSS 樣式
+        const style = document.createElement('style');
+        style.textContent = `
+            .history-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+                gap: 20px;
+                padding: 20px;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            
+            .history-card {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .history-card-header {
+                background: #f8f9fa;
+                padding: 15px;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .analysis-date {
+                margin: 0;
+                color: #007bff;
+                font-size: 1.2rem;
+                font-weight: bold;
+            }
+            
+            .history-card-content {
+                padding: 20px;
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            
+            .history-info {
+                margin-bottom: 20px;
+            }
+            
+            .financial-health {
+                font-size: 1.2rem;
+                color: #333;
+                margin: 10px 0;
+                font-weight: 500;
+            }
+            
+            .prediction {
+                font-size: 1.2rem;
+                margin: 10px 0;
+                font-weight: 500;
+            }
+            
+            .prediction.healthy {
+                color: #28a745;
+            }
+            
+            .prediction.unhealthy {
+                color: #dc3545;
+            }
+            
+            .delete-btn {
+                background: #dc3545;
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-size: 1rem;
+                width: 100%;
+                margin-top: auto;
+            }
+            
+            .delete-btn:hover {
+                background: #c82333;
+            }
+            
+            .welcome-message {
+                text-align: center;
+                padding: 40px;
+                background: #f8f9fa;
+                border-radius: 10px;
+                margin: 20px auto;
+                max-width: 800px;
+            }
+            
+            .welcome-message h3 {
+                color: #333;
+                margin-bottom: 20px;
+                font-size: 1.5rem;
+            }
+            
+            .welcome-message ul {
+                list-style: none;
+                padding: 0;
+            }
+            
+            .welcome-message li {
+                margin: 15px 0;
+                color: #666;
+                font-size: 1.1rem;
+            }
+            
+            @media (max-width: 768px) {
+                .history-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 下載報告功能
+        async function downloadReport(filename) {
+            try {
+                window.location.href = `/download-report/${filename}`;
+            } catch (error) {
+                console.error('下載報告時發生錯誤:', error);
+                alert('下載報告時發生錯誤，請稍後再試');
+            }
+        }
+
+        // 刪除單個記錄
+        async function deleteRecord(filename) {
+            try {
+                if (!confirm('確定要刪除這條記錄嗎？')) {
+                    return;
+                }
+                
+                console.log(`開始刪除記錄: ${filename}`);
+                
+                // 立即從 UI 中移除該記錄卡片，提供更好的用戶體驗
+                const recordToDelete = document.querySelector(`.history-card[data-filename="${filename}"]`);
+                if (recordToDelete) {
+                    // 添加淡出效果
+                    recordToDelete.style.transition = 'opacity 0.3s, transform 0.3s';
+                    recordToDelete.style.opacity = '0';
+                    recordToDelete.style.transform = 'scale(0.9)';
+                    
+                    // 設置延遲後移除元素
+                    setTimeout(() => {
+                        recordToDelete.remove();
+                        
+                        // 檢查是否所有記錄都被刪除，如果是則顯示歡迎訊息
+                        const remainingCards = document.querySelectorAll('.history-card');
+                        if (remainingCards.length === 0) {
+                            const historyContent = document.getElementById('history-content');
+                            const historyWelcome = document.getElementById('history-welcome');
+                            
+                            historyContent.style.display = 'none';
+                            historyWelcome.style.display = 'block';
+                            historyWelcome.innerHTML = `
+                                <div class="welcome-message">
+                                    <h3>歡迎使用財務分析系統</h3>
+                                    <p>目前還沒有分析記錄。您可以：</p>
+                                    <ul>
+                                        <li>上傳檔案進行分析</li>
+                                        <li>手動輸入數據進行分析</li>
+                                    </ul>
+                                </div>
+                            `;
+                        }
+                    }, 300);
+                }
+                
+                // 在背景處理刪除請求
+                const response = await fetch(`/api/delete-record/${filename}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log(`收到刪除請求響應, 狀態碼: ${response.status}`);
+                
+                const result = await response.json();
+                console.log(`響應結果:`, result);
+                
+                if (!result.success) {
+                    console.error(`API 回傳刪除失敗: ${result.message || '未知錯誤'}`);
+                    // 不需要重新載入整個列表，因為我們已經在 UI 中移除了元素
+                }
+            } catch (error) {
+                console.error('刪除記錄時發生錯誤:', error);
+                // 如果出錯，重新載入歷史記錄以確保 UI 與後端同步
+                alert('刪除記錄處理過程中發生錯誤，正在重新載入');
+                await loadHistory();
+            }
+        }
+        
+        // 刪除所有記錄
+        async function deleteAllRecords() {
+            try {
+                if (!confirm('確定要刪除所有記錄嗎？此操作無法恢復！')) {
+                    return;
+                }
+                
+                // 立即從 UI 移除所有記錄卡片
+                const historyCards = document.querySelectorAll('.history-card');
+                historyCards.forEach(card => {
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.9)';
+                });
+                
+                // 設置延遲後清空歷史內容，顯示歡迎訊息
+                setTimeout(() => {
+                    const historyContent = document.getElementById('history-content');
+                    const historyWelcome = document.getElementById('history-welcome');
+                    
+                    historyContent.style.display = 'none';
+                    historyWelcome.style.display = 'block';
+                    historyWelcome.innerHTML = `
+                        <div class="welcome-message">
+                            <h3>歡迎使用財務分析系統</h3>
+                            <p>目前還沒有分析記錄。您可以：</p>
+                            <ul>
+                                <li>上傳檔案進行分析</li>
+                                <li>手動輸入數據進行分析</li>
+                            </ul>
+                        </div>
+                    `;
+                }, 300);
+                
+                // 在背景處理刪除請求
+                const response = await fetch('/api/delete-all-records', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error(`API 回傳刪除所有記錄失敗: ${result.message || '未知錯誤'}`);
+                }
+            } catch (error) {
+                console.error('刪除所有記錄時發生錯誤:', error);
+                alert('刪除所有記錄時發生錯誤，請稍後再試');
+                // 無論如何都重新載入歷史，確保頁面與後端同步
+                await loadHistory();
+            }
+        }
+
+        // 初始化頁面
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+                event.preventDefault();
+                
+                const fileInput = document.getElementById('fileInput');
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                try {
+                    const response = await fetch('/submit-file', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const text = await response.text();
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            alert('檔案上傳成功');
+                        } else {
+                            alert('錯誤: ' + data.message);
+                        }
+                    } catch (error) {
+                        console.error('伺服器回應非 JSON:', text);
+                        alert('伺服器錯誤');
+                    }
+                } catch (error) {
+                    console.error('提交失敗:', error);
+                    alert('提交失敗，請檢查伺服器');
+                }
+            });
+
+            function toggleInputMethod() {
+                const inputMethod = document.getElementById('inputMethod').value;
+                document.getElementById('file-upload-container').style.display = inputMethod === 'file' ? 'block' : 'none';
+                document.getElementById('manual-input-container').style.display = inputMethod === 'manual' ? 'block' : 'none';
+            }
+
+            document.getElementById('inputMethod').addEventListener('change', toggleInputMethod);
+
+            // 隱藏分析結果區域，等待分析後顯示
+            const analysisResults = document.getElementById('analysis-results');
+            if (analysisResults) {
+                analysisResults.style.display = 'none';
+            }
+        });
+
+    </script>
+</body>
+</html>
